@@ -15,7 +15,11 @@ let package = Package(
 		),
 		.target(
 			name: "CCZUNISwiftBridge",
-			dependencies: ["RustXcframework"])
+			dependencies: ["RustXcframework"],
+			resources: [
+				.process("calendar.json")
+			]
+		)
 	]
 )
 	
