@@ -274,6 +274,11 @@ public final class JwqywxApplication: @unchecked Sendable {
         let (_, response) = try await client.postJSON(url: url, headers: customHeaders, json: requestData)
         return response.statusCode == 200
     }
+
+    /// 兼容主 App 旧接口：提交教师评价
+    public func submitTeacherEvaluation(term: String, evaluationId: String, scores: String, comments: String) async throws -> Bool {
+        return try await submitEvaluation(term: term, evaluationId: evaluationId, scores: scores, comments: comments)
+    }
     
     public func getClassScheduleParsed(term: String) async throws -> [ParsedCourse] {
         let matrix = try await getClassSchedule(term: term)
