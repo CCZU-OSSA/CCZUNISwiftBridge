@@ -317,6 +317,11 @@ public final class JwqywxApplication: @unchecked Sendable {
     public func queryElectricity(areaId: String, buildingId: String, roomId: String) async throws -> ElectricityResponse {
         return try await getElectricity(areaId: areaId, buildingId: buildingId, roomId: roomId)
     }
+
+    /// 兼容主 App 旧接口（不同标签和类型）：查询电费
+    public func queryElectricity(area: ElectricityArea, building: Building, roomId: String) async throws -> ElectricityResponse {
+        return try await getElectricity(areaId: area.aid, buildingId: building.buildingid, roomId: roomId)
+    }
 }
 
 private struct CourseScheduleRow: Decodable {
