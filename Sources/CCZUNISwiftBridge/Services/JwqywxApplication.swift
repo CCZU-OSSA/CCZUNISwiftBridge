@@ -312,6 +312,11 @@ public final class JwqywxApplication: @unchecked Sendable {
         let decoder = JSONDecoder()
         return try decoder.decode(ElectricityResponse.self, from: data)
     }
+
+    /// 兼容主 App 旧接口：查询电费
+    public func queryElectricity(areaId: String, buildingId: String, roomId: String) async throws -> ElectricityResponse {
+        return try await getElectricity(areaId: areaId, buildingId: buildingId, roomId: roomId)
+    }
 }
 
 private struct CourseScheduleRow: Decodable {
