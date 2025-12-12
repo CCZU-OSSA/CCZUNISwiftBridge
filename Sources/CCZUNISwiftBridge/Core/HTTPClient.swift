@@ -1,5 +1,6 @@
 import Foundation
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 /// HTTP客户端协议
 public protocol HTTPClient: Sendable {
     var account: Account { get }
@@ -9,6 +10,7 @@ public protocol HTTPClient: Sendable {
     func request(url: URL, method: String, headers: [String: String]?, body: Data?) async throws -> (Data, HTTPURLResponse)
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 /// 属性存储
 public actor PropertyStorage {
     private var storage: [String: Property] = [:]
@@ -28,6 +30,7 @@ public actor PropertyStorage {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 /// 默认HTTP客户端实现
 public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
     public let account: Account
@@ -50,6 +53,7 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
         self.init(account: Account(username: username, password: password))
     }
     
+    @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
     public func request(
         url: URL,
         method: String = "GET",
@@ -91,6 +95,7 @@ public final class DefaultHTTPClient: HTTPClient, @unchecked Sendable {
     }
 }
 
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
 extension HTTPClient {
     /// GET请求
     public func get(url: URL, headers: [String: String]? = nil) async throws -> (Data, HTTPURLResponse) {
