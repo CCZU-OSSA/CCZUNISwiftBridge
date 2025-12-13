@@ -363,21 +363,89 @@ public final class JwqywxApplication: @unchecked Sendable {
     }
 }
 
-private struct CourseScheduleRow: Decodable {
-    let kcmc: String
-    let jsxx: String
-    let jc: String
+private struct CourseScheduleRow: Decodable, Sendable {
+    let fields: [String: AnyCodable]
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let dict = try container.decode([String: AnyCodable].self)
+        self.fields = dict
+    }
     
     func toCourses() -> [RawCourse] {
-        let classes = kcmc.split(separator: ";").map(String.init)
-        let teachers = jsxx.split(separator: ";").map(String.init)
-        let units = max(classes.count, teachers.count)
-        var result: [RawCourse] = []
-        for i in 0..<units {
-            let course = i < classes.count ? classes[i] : ""
-            let teacher = i < teachers.count ? teachers[i] : ""
-            result.append(RawCourse(course: course, teacher: teacher))
+        var courses: [String] = []
+        var teachers: [String: String] = [:]
+        
+        // 提取课程信息 (kc1-kc7)
+        for index in 1...7 {
+            let key = "kc\(index)"
+            if let courseValue = fields[key], let course = courseValue.stringValue {
+                courses.append(course)
+            } else {
+                courses.append("")
+            }
         }
-        return result
+        
+        // 提取教师信息 (kcmc1-kcmc20 和 skjs1-skjs20)
+        for index in 1...20 {
+            let nameKey = "kcmc\(index)"
+            let teacherKey = "skjs\(index)"
+            
+            if let nameValue = fields[nameKey], let name = nameValue.stringValue,
+               let teacherValue = fields[teacherKey], let teacher = teacherValue.stringValue {
+                teachers[name] = teacher
+            }
+        }
+        
+        // 组合课程和教师信息
+        return courses.map { course in
+            let courseParts = course.split(separator: "/")
+            let teacherParts = courseParts.map { part -> String in
+                let courseName = part.split(separator: " ").first.map(String.init) ?? ""
+                return teachers[courseName] ?? ""
+            }
+            
+            let teacher = teacherParts.filter { !$0.isEmpty }.joined(separator: ",/")
+            return RawCourse(course: course, teacher: teacher)
+        }
+    }
+}
+
+// MARK: - AnyCodable辅助类型
+
+private enum AnyCodableValue: Sendable {
+    case int(Int)
+    case double(Double)
+    case string(String)
+    case bool(Bool)
+    case null
+}
+
+private struct AnyCodable: Decodable, Sendable {
+    let value: AnyCodableValue
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        
+        if let intValue = try? container.decode(Int.self) {
+            value = .int(intValue)
+        } else if let doubleValue = try? container.decode(Double.self) {
+            value = .double(doubleValue)
+        } else if let stringValue = try? container.decode(String.self) {
+            value = .string(stringValue)
+        } else if let boolValue = try? container.decode(Bool.self) {
+            value = .bool(boolValue)
+        } else if container.decodeNil() {
+            value = .null
+        } else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unsupported type")
+        }
+    }
+    
+    var stringValue: String? {
+        if case .string(let str) = value {
+            return str
+        }
+        return nil
     }
 }
