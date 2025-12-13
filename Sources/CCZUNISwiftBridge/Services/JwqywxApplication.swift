@@ -325,43 +325,70 @@ public final class JwqywxApplication: @unchecked Sendable {
     }
     
     public func getElectricityAreas() async throws -> [ElectricityArea] {
-        let url = URL(string: "http://weapp.cczu.edu.cn/homecenter-server/external/urs1235000059")!
-        let (data, _) = try await client.get(url: url)
-        let decoder = JSONDecoder()
-        return try decoder.decode([ElectricityArea].self, from: data)
+        // 预定义的校区配置
+        return [
+            ElectricityArea(area: "西太湖校区", areaname: "西太湖校区", aid: "0030000000002501"),
+            ElectricityArea(area: "武进校区", areaname: "武进校区", aid: "0030000000002502"),
+            ElectricityArea(area: "西太湖校区1-7,10-11", areaname: "西太湖校区1-7,10-11", aid: "0030000000002503")
+        ]
     }
     
-    public func getBuildings(areaId: String) async throws -> [Building] {
-        let url = URL(string: "http://weapp.cczu.edu.cn/homecenter-server/external/urs1235000099?areaid=\(areaId)")!
-        let (data, _) = try await client.get(url: url)
+    public func getBuildings(area: ElectricityArea) async throws -> [Building] {
+        let url = URL(string: "http://wxxy.cczu.edu.cn/wechat/callinterface/queryElecBuilding.html")!
+        
+        let areaDict: [String: String] = ["area": area.area, "areaname": area.areaname]
+        let areaJson = try String(data: JSONEncoder().encode(areaDict), encoding: .utf8) ?? ""
+        
+        let payload: [String: String] = [
+            "areajson": areaJson,
+            "areaid": area.aid
+        ]
+        
+        var headers = customHeaders
+        headers["User-Agent"] = "Mozilla/5.0 (Linux; Android 15; V2232A Build/AP3A.240905.015.A2; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.136 Mobile Safari/537.36 XWEB/1340157 MMWEBSDK/20250201 MMWEBID/140 wxwork/4.1.38 MicroMessenger/7.0.1 NetType/WIFI Language/zh Lang/zh ColorScheme/Light wwmver/3.26.38.639"
+        
+        let (data, response) = try await client.postForm(url: url, headers: headers, formData: payload)
+        
+        guard response.statusCode == 200 else {
+            throw CCZUError.unknown("HTTP Status code: \(response.statusCode)")
+        }
+        
         let decoder = JSONDecoder()
-        return try decoder.decode([Building].self, from: data)
+        let json = try decoder.decode([String: [Building]].self, from: data)
+        return json["buildingtab"] ?? []
     }
     
-    public func getRooms(buildingId: String) async throws -> [Room] {
-        let url = URL(string: "http://weapp.cczu.edu.cn/homecenter-server/external/urs1235000100?buildingid=\(buildingId)")!
-        let (data, _) = try await client.get(url: url)
-        let decoder = JSONDecoder()
-        return try decoder.decode([Room].self, from: data)
-    }
-    
-    public func getElectricity(areaId: String, buildingId: String, roomId: String) async throws -> ElectricityResponse {
-        let url = URL(string: "http://weapp.cczu.edu.cn/homecenter-server/external/urs1235000101?areaid=\(areaId)&buildingid=\(buildingId)&roomid=\(roomId)")!
-        let (data, _) = try await client.get(url: url)
+    public func queryElectricity(area: ElectricityArea, building: Building, roomId: String) async throws -> ElectricityResponse {
+        let url = URL(string: "http://wxxy.cczu.edu.cn/wechat/callinterface/queryElecRoomInfo.html")!
+        
+        let areaDict: [String: String] = ["area": area.area, "areaname": area.areaname]
+        let buildingDict: [String: String] = ["building": building.building, "buildingid": building.buildingid]
+        
+        let areaJson = try String(data: JSONEncoder().encode(areaDict), encoding: .utf8) ?? ""
+        let buildingJson = try String(data: JSONEncoder().encode(buildingDict), encoding: .utf8) ?? ""
+        
+        let payload: [String: String] = [
+            "areajson": areaJson,
+            "areaid": area.aid,
+            "buildjson": buildingJson,
+            "buildingid": building.buildingid,
+            "roomid": roomId
+        ]
+        
+        var headers = customHeaders
+        headers["User-Agent"] = "Mozilla/5.0 (Linux; Android 15; V2232A Build/AP3A.240905.015.A2; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.136 Mobile Safari/537.36 XWEB/1340157 MMWEBSDK/20250201 MMWEBID/140 wxwork/4.1.38 MicroMessenger/7.0.1 NetType/WIFI Language/zh Lang/zh ColorScheme/Light wwmver/3.26.38.639"
+        
+        let (data, response) = try await client.postForm(url: url, headers: headers, formData: payload)
+        
+        guard response.statusCode == 200 else {
+            throw CCZUError.unknown("HTTP Status code: \(response.statusCode)")
+        }
+        
         let decoder = JSONDecoder()
         return try decoder.decode(ElectricityResponse.self, from: data)
     }
-
-    /// 兼容主 App 旧接口：查询电费
-    public func queryElectricity(areaId: String, buildingId: String, roomId: String) async throws -> ElectricityResponse {
-        return try await getElectricity(areaId: areaId, buildingId: buildingId, roomId: roomId)
-    }
-
-    /// 兼容主 App 旧接口（不同标签和类型）：查询电费
-    public func queryElectricity(area: ElectricityArea, building: Building, roomId: String) async throws -> ElectricityResponse {
-        return try await getElectricity(areaId: area.aid, buildingId: building.buildingid, roomId: roomId)
-    }
 }
+
 
 private struct CourseScheduleRow: Decodable, Sendable {
     let fields: [String: AnyCodable]
