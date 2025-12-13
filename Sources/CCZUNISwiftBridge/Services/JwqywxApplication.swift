@@ -340,8 +340,9 @@ public final class JwqywxApplication: @unchecked Sendable {
         let areaJson = try String(data: JSONEncoder().encode(areaDict), encoding: .utf8) ?? ""
         
         let payload: [String: String] = [
-            "areajson": areaJson,
-            "areaid": area.aid
+            "aid": area.aid,
+            "account": "1",
+            "area": areaJson
         ]
         
         var headers = customHeaders
@@ -363,20 +364,25 @@ public final class JwqywxApplication: @unchecked Sendable {
         
         let areaDict: [String: String] = ["area": area.area, "areaname": area.areaname]
         let buildingDict: [String: String] = ["building": building.building, "buildingid": building.buildingid]
+        let floorDict: [String: String] = ["floorid": "", "floor": ""]
+        let roomDict: [String: String] = ["room": "", "roomid": roomId]
         
         let areaJson = try String(data: JSONEncoder().encode(areaDict), encoding: .utf8) ?? ""
         let buildingJson = try String(data: JSONEncoder().encode(buildingDict), encoding: .utf8) ?? ""
+        let floorJson = try String(data: JSONEncoder().encode(floorDict), encoding: .utf8) ?? ""
+        let roomJson = try String(data: JSONEncoder().encode(roomDict), encoding: .utf8) ?? ""
         
         let payload: [String: String] = [
-            "areajson": areaJson,
-            "areaid": area.aid,
-            "buildjson": buildingJson,
-            "buildingid": building.buildingid,
-            "roomid": roomId
+            "aid": area.aid,
+            "account": "1",
+            "area": areaJson,
+            "building": buildingJson,
+            "floor": floorJson,
+            "room": roomJson
         ]
         
         var headers = customHeaders
-        headers["User-Agent"] = "Mozilla/5.0 (Linux; Android 15; V2232A Build/AP3A.240905.015.A2; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.136 Mobile Safari/537.36 XWEB/1340157 MMWEBSDK/20250201 MMWEBID/140 wxwork/4.1.38 MicroMessenger/7.0.1 NetType/WIFI Language/zh Lang/zh ColorScheme/Light wwmver/3.26.38.639"
+        headers["User-Agent"] = "Mozilla/5.0 (Linux; Android 15; V2232A Build/AP3A.240905.015.A2; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/134.0.6998.136 Mobile Safari/537.36 XWEB/1340125 MMWEBSDK/20250201 MMWEBID/140 wxwork/4.1.38 MicroMessenger/7.0.1 NetType/WIFI Language/zh Lang/zh ColorScheme/Light wwmver/3.26.38.639"
         
         let (data, response) = try await client.postForm(url: url, headers: headers, formData: payload)
         
