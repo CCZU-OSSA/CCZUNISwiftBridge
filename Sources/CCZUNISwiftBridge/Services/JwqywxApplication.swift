@@ -275,9 +275,43 @@ public final class JwqywxApplication: @unchecked Sendable {
         return response.statusCode == 200
     }
 
-    /// 兼容主 App 旧接口：提交教师评价
+    /// 兼容主 App 旧接口：提交教师评价（按评价ID与逗号分隔分数）
     public func submitTeacherEvaluation(term: String, evaluationId: String, scores: String, comments: String) async throws -> Bool {
         return try await submitEvaluation(term: term, evaluationId: evaluationId, scores: scores, comments: comments)
+    }
+
+    /// 兼容 CCZUKit 老接口：提交教师评价（按课程与教师信息、总分与分数组）
+    /// 与 CCZUKit 保持一致的签名以便主 App 无缝切换。
+    public func submitTeacherEvaluation(
+        term: String,
+        evaluatableClass: EvaluatableClass,
+        overallScore: Int,
+        scores: [Int],
+        comments: String
+    ) async throws -> Bool {
+        guard let authId = authorizationId else {
+            throw CCZUError.notLoggedIn
+        }
+        // 将分数数组转换为逗号分隔的字符串，末尾加逗号，兼容原后端格式
+        let scoresString = scores.map(String.init).joined(separator: ",") + ","
+
+        let url = URL(string: "http://jwqywx.cczu.edu.cn:8180/api/pj_insert_xspj")!
+        let requestData: [String: String] = [
+            "pjxq": term,
+            "yhdm": client.account.username,
+            "jsdm": evaluatableClass.teacherCode,
+            "kcdm": evaluatableClass.courseCode,
+            "zhdf": String(overallScore),
+            "pjjg": scoresString,
+            "yjjy": comments,
+            "yhid": authId
+        ]
+
+        let (_, response) = try await client.postJSON(url: url, headers: customHeaders, json: requestData)
+        guard response.statusCode == 200 else {
+            throw CCZUError.unknown("HTTP Status code: \(response.statusCode)")
+        }
+        return true
     }
     
     public func getClassScheduleParsed(term: String) async throws -> [ParsedCourse] {
